@@ -11,7 +11,7 @@ public class CurveApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(CurveApplication.class.getResource("main-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load());
+        Scene scene = new Scene(fxmlLoader.load(), 300, 320);
         stage.setTitle("TP 2025");
         stage.setScene(scene);
         stage.show();
