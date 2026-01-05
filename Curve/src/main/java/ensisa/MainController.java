@@ -7,15 +7,19 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 
 public class MainController {
 
-    @FXML
-    private Canvas canvas;
+    @FXML private Canvas canvasRed;
+    @FXML private Canvas canvasGreen;
+    @FXML private Canvas canvasBlue;
 
-    private CurveModel model;
+    private CurveModel modelRed;
+    private CurveModel modelGreen;
+    private CurveModel modelBlue;
+
+    private CurveModel selectedModel = null;
     private ControlPoint selectedPoint = null;
 
     private final double OFFSET_X = 20.0;
@@ -24,23 +28,25 @@ public class MainController {
 
     @FXML
     public void initialize() {
-        model = new CurveModel();
+        modelRed = new CurveModel();
+        modelGreen = new CurveModel();
+        modelBlue = new CurveModel();
 
-        canvas.setOnMousePressed(this::handleMousePressed);
-        canvas.setOnMouseDragged(this::handleMouseDragged);
-        canvas.setOnMouseReleased(e -> selectedPoint = null);
+        setupCanvasEvents(canvasRed, modelRed);
+        setupCanvasEvents(canvasGreen, modelGreen);
+        setupCanvasEvents(canvasBlue, modelBlue);
 
-        draw();
+        drawAll();
     }
 
-    private void draw() {
+    private void draw(Canvas canvas, CurveModel model, Color color) {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
         gc.setStroke(Color.LIGHTGRAY);
         gc.strokeRect(OFFSET_X, OFFSET_Y, 255, 255);
 
-        gc.setStroke(Color.BLUE);
+        gc.setStroke(color);
         gc.setLineWidth(2);
         gc.beginPath();
 
@@ -68,27 +74,38 @@ public class MainController {
         }
     }
 
-    private void handleMousePressed(MouseEvent e) {
-        double mouseX = e.getX();
-        double mouseY = e.getY();
-
-        for (ControlPoint p : model.getControlPoints()) {
-            double pX = OFFSET_X + p.getX();
-            double pY = OFFSET_Y + (GRAPH_HEIGHT - p.getY());
-
-            if (Math.abs(mouseX - pX) < 10 && Math.abs(mouseY - pY) < 10) {
-                selectedPoint = p;
-                break;
-            }
-        }
+    private void drawAll() {
+        draw(canvasRed, modelRed, Color.RED);
+        draw(canvasGreen, modelGreen, Color.GREEN);
+        draw(canvasBlue, modelBlue, Color.BLUE);
     }
 
-    private void handleMouseDragged(MouseEvent e) {
-        if (selectedPoint != null) {
-            double newY = GRAPH_HEIGHT - (e.getY() - OFFSET_Y);
-            selectedPoint.setY(newY);
-            draw();
-        }
+    private void setupCanvasEvents(Canvas canvas, CurveModel model) {
+        canvas.setOnMousePressed(e -> {
+            for (ControlPoint p : model.getControlPoints()) {
+                double pX = OFFSET_X + p.getX();
+                double pY = OFFSET_Y + (GRAPH_HEIGHT - p.getY());
+
+                if (Math.abs(e.getX() - pX) < 10 && Math.abs(e.getY() - pY) < 10) {
+                    selectedPoint = p;
+                    selectedModel = model;
+                    break;
+                }
+            }
+        });
+
+        canvas.setOnMouseDragged(e -> {
+            if (selectedPoint != null) {
+                double newY = GRAPH_HEIGHT - (e.getY() - OFFSET_Y);
+                selectedPoint.setY(newY);
+                drawAll();
+            }
+        });
+
+        canvas.setOnMouseReleased(e -> {
+            selectedPoint = null;
+            selectedModel = null;
+        });
     }
 
     @FXML
@@ -98,7 +115,9 @@ public class MainController {
 
     @FXML
     private void onLinear() {
-        model.linearize();
-        draw();
+        modelRed.linearize();
+        modelGreen.linearize();
+        modelBlue.linearize();
+        drawAll();
     }
 }
