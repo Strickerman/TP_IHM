@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -16,6 +17,7 @@
                 <Menu mnemonicParsing="false" text="Fichier">
                     <items>
                         <MenuItem mnemonicParsing="false" onAction="#onQuit" text="Quitter" />
+                  <MenuItem mnemonicParsing="false" onAction="#onOpen" text="Ouvrir" />
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Edition">
@@ -27,27 +29,32 @@
         </MenuBar>
     </top>
    <center>
-      <HBox spacing="10.0" style="-fx-padding: 10;" BorderPane.alignment="CENTER">
+      <VBox alignment="CENTER" BorderPane.alignment="CENTER">
          <children>
-            <VBox prefHeight="200.0" prefWidth="100.0">
+            <HBox spacing="10.0" style="-fx-padding: 10;">
                <children>
-                  <Label text="Rouge" />
-                  <Canvas fx:id="canvasRed" height="300.0" width="300.0" />
+                  <VBox prefHeight="200.0" prefWidth="100.0">
+                     <children>
+                        <Label text="Rouge" />
+                        <Canvas fx:id="canvasRed" height="300.0" width="300.0" />
+                     </children>
+                  </VBox>
+                  <VBox prefHeight="200.0" prefWidth="100.0">
+                     <children>
+                        <Label text="Vert" />
+                        <Canvas fx:id="canvasGreen" height="300.0" width="300.0" />
+                     </children>
+                  </VBox>
+                  <VBox prefHeight="200.0" prefWidth="100.0">
+                     <children>
+                        <Label text="Bleu" />
+                        <Canvas fx:id="canvasBlue" height="300.0" width="300.0" />
+                     </children>
+                  </VBox>
                </children>
-            </VBox>
-            <VBox prefHeight="200.0" prefWidth="100.0">
-               <children>
-                  <Label text="Vert" />
-                  <Canvas fx:id="canvasGreen" height="300.0" width="300.0" />
-               </children>
-            </VBox>
-            <VBox prefHeight="200.0" prefWidth="100.0">
-               <children>
-                  <Label text="Bleu" />
-                  <Canvas fx:id="canvasBlue" height="300.0" width="300.0" />
-               </children>
-            </VBox>
+            </HBox>
+            <ImageView fx:id="imageView" fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
          </children>
-      </HBox>
+      </VBox>
    </center>
 </BorderPane>

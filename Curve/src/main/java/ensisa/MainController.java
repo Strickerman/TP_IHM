@@ -7,6 +7,9 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.*;
+import javafx.stage.FileChooser;
+import java.io.File;
 import javafx.scene.paint.Color;
 
 public class MainController {
@@ -14,6 +17,7 @@ public class MainController {
     @FXML private Canvas canvasRed;
     @FXML private Canvas canvasGreen;
     @FXML private Canvas canvasBlue;
+    @FXML private ImageView imageView;
 
     private CurveModel modelRed;
     private CurveModel modelGreen;
@@ -24,6 +28,8 @@ public class MainController {
     private final double OFFSET_X = 20.0;
     private final double OFFSET_Y = 20.0;
     private final double GRAPH_HEIGHT = 255.0;
+
+    private Image originalImage;
 
     @FXML
     public void initialize() {
@@ -77,6 +83,7 @@ public class MainController {
         draw(canvasRed, modelRed, Color.RED);
         draw(canvasGreen, modelGreen, Color.GREEN);
         draw(canvasBlue, modelBlue, Color.BLUE);
+        applyFilter();
     }
 
     private void setupCanvasEvents(Canvas canvas, CurveModel model) {
@@ -116,5 +123,62 @@ public class MainController {
         modelGreen.linearize();
         modelBlue.linearize();
         drawAll();
+    }
+
+    @FXML
+    private void onOpen() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Images JPEG", "*.jpg", "*.jpeg")
+        );
+        File selectedFile = fileChooser.showOpenDialog(imageView.getScene().getWindow());
+
+        if (selectedFile != null) {
+            originalImage = new Image(selectedFile.toURI().toString());
+            applyFilter();
+        }
+    }
+
+    private void applyFilter() {
+        if (originalImage == null) return;
+
+        int width = (int) originalImage.getWidth();
+        int height = (int) originalImage.getHeight();
+        WritableImage dstImage = new WritableImage(width, height);
+        PixelReader reader = originalImage.getPixelReader();
+        PixelWriter writer = dstImage.getPixelWriter();
+
+        int[] lutR = prepareLUT(modelRed);
+        int[] lutG = prepareLUT(modelGreen);
+        int[] lutB = prepareLUT(modelBlue);
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int argb = reader.getArgb(x, y);
+
+                int a = (argb >> 24) & 0xff;
+                int r = (argb >> 16) & 0xff;
+                int g = (argb >> 8) & 0xff;
+                int b = argb & 0xff;
+
+                int newR = lutR[r];
+                int newG = lutG[g];
+                int newB = lutB[b];
+
+                int newArgb = (a << 24) | (newR << 16) | (newG << 8) | newB;
+                writer.setArgb(x, y, newArgb);
+            }
+        }
+        imageView.setImage(dstImage);
+    }
+
+    private int[] prepareLUT(CurveModel model) {
+        int[] lut = new int[256];
+        var points = model.getControlPoints();
+        for (int i = 0; i < 256; i++) {
+            double val = Lagrange.compute(i, points);
+            lut[i] = (int) Math.min(255, Math.max(0, val));
+        }
+        return lut;
     }
 }
