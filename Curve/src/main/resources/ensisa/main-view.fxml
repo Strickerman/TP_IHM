@@ -23,13 +23,15 @@
                 <Menu mnemonicParsing="false" text="Edition">
                     <items>
                         <MenuItem mnemonicParsing="false" onAction="#onLinear" text="Linéaire" />
+                  <MenuItem fx:id="menuUndo" mnemonicParsing="false" onAction="#onUndo" text="Annuler" />
+                  <MenuItem fx:id="menuRedo" mnemonicParsing="false" onAction="#onRedo" text="Rétablir" />
                     </items>
                 </Menu>
             </menus>
         </MenuBar>
     </top>
    <center>
-      <VBox alignment="CENTER" BorderPane.alignment="CENTER">
+      <VBox BorderPane.alignment="CENTER">
          <children>
             <HBox spacing="10.0" style="-fx-padding: 10;">
                <children>
@@ -53,7 +55,7 @@
                   </VBox>
                </children>
             </HBox>
-            <ImageView fx:id="imageView" fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
+            <ImageView fx:id="imageView" fitHeight="400.0" fitWidth="800.0" pickOnBounds="true" preserveRatio="true" smooth="false" />
          </children>
       </VBox>
    </center>

@@ -3,14 +3,16 @@ package ensisa;
 import ensisa.math.Lagrange;
 import ensisa.model.ControlPoint;
 import ensisa.model.CurveModel;
+import ensisa.commands.*;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.*;
 import javafx.stage.FileChooser;
-import java.io.File;
 import javafx.scene.paint.Color;
+import java.io.File;
+import java.util.List;
 
 public class MainController {
 
@@ -24,12 +26,14 @@ public class MainController {
     private CurveModel modelBlue;
 
     private ControlPoint selectedPoint = null;
+    private double initialY;
 
     private final double OFFSET_X = 20.0;
     private final double OFFSET_Y = 20.0;
     private final double GRAPH_HEIGHT = 255.0;
 
     private Image originalImage;
+    private final UndoManager undoManager = new UndoManager();
 
     @FXML
     public void initialize() {
@@ -47,25 +51,18 @@ public class MainController {
     private void draw(Canvas canvas, CurveModel model, Color color) {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-
         gc.setStroke(Color.LIGHTGRAY);
         gc.strokeRect(OFFSET_X, OFFSET_Y, 255, 255);
-
         gc.setStroke(color);
         gc.setLineWidth(2);
         gc.beginPath();
 
         var points = model.getControlPoints();
-
         for (int x = 0; x <= 255; x++) {
             double yMath = Lagrange.compute(x, points);
-
-            if (yMath < 0) yMath = 0;
-            if (yMath > 255) yMath = 255;
-
+            yMath = Math.min(255, Math.max(0, yMath));
             double xScreen = OFFSET_X + x;
             double yScreen = OFFSET_Y + (GRAPH_HEIGHT - yMath);
-
             if (x == 0) gc.moveTo(xScreen, yScreen);
             else gc.lineTo(xScreen, yScreen);
         }
@@ -79,7 +76,7 @@ public class MainController {
         }
     }
 
-    private void drawAll() {
+    public void drawAll() {
         draw(canvasRed, modelRed, Color.RED);
         draw(canvasGreen, modelGreen, Color.GREEN);
         draw(canvasBlue, modelBlue, Color.BLUE);
@@ -91,9 +88,9 @@ public class MainController {
             for (ControlPoint p : model.getControlPoints()) {
                 double pX = OFFSET_X + p.getX();
                 double pY = OFFSET_Y + (GRAPH_HEIGHT - p.getY());
-
                 if (Math.abs(e.getX() - pX) < 10 && Math.abs(e.getY() - pY) < 10) {
                     selectedPoint = p;
+                    initialY = p.getY();
                     break;
                 }
             }
@@ -108,35 +105,37 @@ public class MainController {
         });
 
         canvas.setOnMouseReleased(e -> {
-            selectedPoint = null;
+            if (selectedPoint != null) {
+                undoManager.execute(new MovePointCommand(selectedPoint, initialY, selectedPoint.getY(), this::drawAll));
+                selectedPoint = null;
+            }
         });
     }
 
-    @FXML
-    private void onQuit() {
-        Platform.exit();
-    }
+    @FXML private void onUndo() { undoManager.undo(); }
+    @FXML private void onRedo() { undoManager.redo(); }
+    @FXML private void onQuit() { Platform.exit(); }
 
     @FXML
     private void onLinear() {
-        modelRed.linearize();
-        modelGreen.linearize();
-        modelBlue.linearize();
-        drawAll();
+        undoManager.execute(new LinearizeCommand(List.of(modelRed, modelGreen, modelBlue), this::drawAll));
     }
 
     @FXML
     private void onOpen() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Images JPEG", "*.jpg", "*.jpeg")
-        );
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Images JPEG", "*.jpg", "*.jpeg"));
         File selectedFile = fileChooser.showOpenDialog(imageView.getScene().getWindow());
 
         if (selectedFile != null) {
-            originalImage = new Image(selectedFile.toURI().toString());
-            applyFilter();
+            Image newImg = new Image(selectedFile.toURI().toString());
+            undoManager.execute(new OpenImageCommand(this, originalImage, newImg));
         }
+    }
+
+    public void setOriginalImage(Image img) {
+        this.originalImage = img;
+        applyFilter();
     }
 
     private void applyFilter() {
@@ -155,7 +154,6 @@ public class MainController {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 int argb = reader.getArgb(x, y);
-
                 int a = (argb >> 24) & 0xff;
                 int r = (argb >> 16) & 0xff;
                 int g = (argb >> 8) & 0xff;
