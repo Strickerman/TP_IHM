@@ -19,7 +19,6 @@ public class MainController {
     private CurveModel modelGreen;
     private CurveModel modelBlue;
 
-    private CurveModel selectedModel = null;
     private ControlPoint selectedPoint = null;
 
     private final double OFFSET_X = 20.0;
@@ -88,7 +87,6 @@ public class MainController {
 
                 if (Math.abs(e.getX() - pX) < 10 && Math.abs(e.getY() - pY) < 10) {
                     selectedPoint = p;
-                    selectedModel = model;
                     break;
                 }
             }
@@ -104,7 +102,6 @@ public class MainController {
 
         canvas.setOnMouseReleased(e -> {
             selectedPoint = null;
-            selectedModel = null;
         });
     }
 
